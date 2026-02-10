@@ -21,15 +21,14 @@ class Project extends Model
         'funding_goal',
         'current_funding',
         'expected_annual_return',
-        'minimum_investment',
         'duration_months',
         'status',
         'completion_percentage',
-        'funding_start_date',
-        'funding_end_date',
         'project_start_date',
         'expected_completion_date',
         'image_url',
+        'highlights',
+        'documents',
     ];
 
     protected $casts = [
@@ -38,12 +37,17 @@ class Project extends Model
         'funding_goal' => 'decimal:2',
         'current_funding' => 'decimal:2',
         'expected_annual_return' => 'decimal:2',
-        'minimum_investment' => 'decimal:2',
-        'funding_start_date' => 'date',
-        'funding_end_date' => 'date',
         'project_start_date' => 'date',
         'expected_completion_date' => 'date',
+        'highlights' => 'array',
+        'documents' => 'array',
     ];
+
+    // Relationships
+    public function offerings()
+    {
+        return $this->hasMany(Offering::class);
+    }
 
     public function investments()
     {
@@ -55,16 +59,53 @@ class Project extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    // Get funding progress percentage
+    public function distributions()
+    {
+        return $this->hasMany(Distribution::class);
+    }
+
+    // Computed attributes
     public function getFundingProgressAttribute()
     {
         if ($this->funding_goal == 0) return 0;
         return round(($this->current_funding / $this->funding_goal) * 100, 2);
     }
 
-    // Get number of investors
     public function getInvestorsCountAttribute()
     {
         return $this->investments()->distinct('user_id')->count('user_id');
+    }
+
+    // public function getActiveOfferingAttribute()
+    // {
+    //     return $this->offerings()->active()->first();
+    // }
+
+    public function activeOffering()
+    {
+        return $this->hasOne(Offering::class)
+            ->where('status', 'open')
+            ->where(function ($q) {
+                $q->whereNull('opens_at')->orWhere('opens_at', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('closes_at')->orWhere('closes_at', '>=', now());
+            });
+    }
+
+    // Scopes
+    public function scopeFunding($query)
+    {
+        return $query->where('status', 'funding');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type', $type);
     }
 }

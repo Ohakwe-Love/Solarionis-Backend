@@ -13,12 +13,18 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('investment_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('project_id')->nullable()->constrained()->onDelete('set null');
-            $table->enum('type', ['investment', 'dividend', 'withdrawal', 'deposit']);
+            $table->enum('type', ['investment', 'dividend', 'withdrawal', 'deposit', 'fee']);
             $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])->default('completed');
-            $table->string('reference_number')->unique();
+            $table->string('reference_number')->unique(); // Idempotency key
+            $table->timestamp('occurred_at'); // Cleaner than created_at for business logic
+            $table->json('metadata')->nullable(); // Store extra info (offering_id, etc.)
             $table->timestamps();
+
+            // Indexes for performance
+            $table->index(['user_id', 'type', 'status']);
+            $table->index('occurred_at');
         });
     }
 

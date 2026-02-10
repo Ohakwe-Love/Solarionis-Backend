@@ -8,27 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('investments', function (Blueprint $table) {
+        Schema::create('distributions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('investment_id')->constrained()->onDelete('cascade');
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
-            $table->foreignId('offering_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 15, 2);
-            $table->decimal('shares', 10, 4); 
-            $table->decimal('share_price', 10, 2);
-            $table->enum('status', ['active', 'completed', 'withdrawn'])->default('active');
-            $table->timestamp('invested_at');
+            $table->date('period_start');
+            $table->date('period_end');
+            $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
+            $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 
-            // Composite indexes for common queries
+            // Indexes for queries
             $table->index(['user_id', 'status']);
-            $table->index(['project_id', 'status']);
-            $table->index('offering_id');
+            $table->index(['investment_id', 'period_start']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('investments');
+        Schema::dropIfExists('distributions');
     }
 };
